@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stage1.h>
+#include <stage2.h>
 
 /**
   Main function, reads arguments and runs the program
@@ -49,12 +50,22 @@ int main(int argc, char * argv[]) {
     else if (strcmp(argv[i], "-s1") == 0) {
       stage = 1;
     }
+    else if (strcmp(argv[i], "-s2") == 0) {
+      stage = 2;
+    }
   }
 
-  if (stage > 0) {
-    stage1(file_name, output_name, include_dirs, num_includes);
+  int ret = 0;
+  if (stage > 3 || stage == 1) {
+    ret = stage1(file_name, output_name, include_dirs, num_includes);
+    if (ret) goto exit;
+    strcpy(file_name, output_name);
   }
-
+  if (stage > 3 || stage == 2) {
+    ret = stage2(file_name, output_name);
+    if (ret) goto exit;
+  }
+ exit:
   for (int i = 0; i < num_includes; i++) {
     free(include_dirs[i]);
   }
@@ -62,5 +73,5 @@ int main(int argc, char * argv[]) {
   free(include_dirs);
   free(file_name);
   free(output_name);
-  return 0;
+  return ret;
 } 
