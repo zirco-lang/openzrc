@@ -24,8 +24,8 @@
             zirco-pkgs.packages.${system}.zrc
           ];
         };
-        packages.asm = pkgs.stdenv.mkDerivation {
-          name = "asm";
+        packages.zrc = pkgs.stdenv.mkDerivation {
+          name = "zrc";
           buildInputs = [
             pkgs.gnumake
             pkgs.clang
@@ -39,11 +39,11 @@
 	        '';
           installPhase = ''
             mkdir -p $out/bin
-            cp target/asm $out/bin/
+            cp target/zrc $out/bin/
           '';
       };
 
-      packages.default = self.packages.${system}.asm;
+      packages.default = self.packages.${system}.zrc;
 
     }
   );

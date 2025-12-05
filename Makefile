@@ -5,13 +5,14 @@ CFLAGS= -Iinclude $(CEXTS)
 ZRC ?= $(shell which zrc)
 ZRCROOT ?= $(shell dirname $(ZRC))/..
 ZRCLIB ?= $(ZRCROOT)/include
-ZRFLAGS ?= -I${ZRCLIB} -I./include $(ZREXTS)
-OUTPUT=main
-ifeq ($(OS),Windows_NT)
-    OUTPUT = target/zrc.exe
-endif
+ZRFLAGS ?= -I${ZRCLIB} -Iinclude $(ZREXTS)
 
 OUTDIR ?= ./target
+
+OUTPUT=main
+ifeq ($(OS),Windows_NT)
+    OUTPUT = $(OUTDIR)/zrc.exe
+endif
 
 ZR_SOURCES ?= $(wildcard src/*.zr)
 ZR_OUTPUTS ?= $(ZR_SOURCES:src/%.zr=$(OUTDIR)/%.o)
@@ -23,10 +24,6 @@ C_OUTPUTS ?= $(C_SOURCES:src/%.c=$(OUTDIR)/%.o)
 
 all: clean $(OUTPUT)
 test: CEXTS = -DEXT_INT
-
-
-interrupt: CEXTS = -DEXT_INT
-interrupt: all
 
 $(OUTDIR)/zrc.exe: main
 	@cp $(OUTDIR)/zrc $(OUTDIR)/zrc.exe
