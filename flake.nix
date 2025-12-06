@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    zirco-pkgs.url = "github:zirco-lang/zrc/main";
+    zirco-pkgs.url = "github:zirco-lang/zrc/flake2"; # until merge
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -17,7 +17,7 @@
           buildInputs = with pkgs; [
             gnumake
             clang
-            valgrind
+#            valgrind (broken on macOS)
             gdb
             git
             lazygit

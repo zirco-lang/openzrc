@@ -1,0 +1,76 @@
+#include <util.zh>
+
+#include <stdlib.zh>
+
+fn skip_white(buffer: *u8, start: usize) -> usize {
+    let out = 0usize;
+    while (
+        buffer[start + out] == ' ' ||
+        buffer[start + out] == '\t' ||
+        buffer[start + out] == '\n' ||
+        buffer[start + out] == '\r'
+    ) {
+        out++;
+    }
+
+    return out;
+}
+
+fn next_tok(buffer: *u8, start: usize) -> usize {
+    let out = 0usize;
+    while (
+        buffer[start + out] != ' ' &&
+        buffer[start + out] != '\t' &&
+        buffer[start + out] != '\n' &&
+        buffer[start + out] != '\r' &&
+        buffer[start + out] != 0 u8
+    ) {
+        out++;
+    }
+
+    return out;
+}
+
+
+fn in_range(first: u8, max: u8, c: u8) -> bool {
+    return c >= first && c <= max;
+}
+
+fn is_digit(c: u8) -> bool {
+    return in_range('0', '9', c);
+}
+
+fn is_alpha(c: u8) -> bool {
+    return in_range('a', 'z', c) || in_range('A', 'Z', c);
+}
+
+fn is_alpha_num(c: u8) -> bool {
+    return is_alpha(c) || is_digit(c);
+}
+
+let allocs: [16384]*void;
+let alloc_count: usize = 0usize;
+
+fn add_alloc(size: usize) -> *void {
+    let ptr = malloc(size);
+    allocs[alloc_count] = ptr;
+    alloc_count++;
+    return ptr;
+}
+
+fn alloc_substring(data_len: usize, buffer: *u8, idx: usize) -> *u8 {
+    let data = add_alloc(data_len + 1usize) as *u8;
+    for (let i = 0usize; i < data_len; i++) {
+        data[i] = buffer[idx + i];
+    }
+    data[data_len] = 0 u8;
+    return data;
+}
+
+
+fn quit(code: u8) -> void {
+    for (let i = 0usize; i < alloc_count; i++) {
+        free(allocs[i]);
+    }
+    exit(code as i32);
+}

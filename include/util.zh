@@ -1,0 +1,68 @@
+#pragma once
+
+/**
+  Skips white space
+  buffer: buffer
+  start: current index
+  return: amount to move head by
+*/
+fn skip_white(buffer: *u8, start: usize) -> usize;
+
+/**
+  Returns the index of the end of the next token
+  buffer: input buffer
+  start: current index
+  return: amount
+*/
+fn next_tok(buffer: *u8, start: usize) -> usize;
+
+/**
+ * Returns 1 if character is in range
+ * first - first character to check
+ * max - last character to checl
+ * c - character to check against
+ * return 1 if in range, 0 otherwise
+ */
+fn in_range(first: u8, max: u8, c: u8) -> bool;
+
+/**
+ * Returns 1 if characte is a decimal digit
+ * c - character
+ * return - 1 if in range, 0 otherwise
+ */
+fn is_digit(c: u8) -> bool;
+
+/**
+ * Returns 1 if character is a letter
+ * c - character
+ * return - 1 if in range, 0 otherwise
+ */
+fn is_alpha(c: u8) -> bool;
+
+/**
+ * returns 1 if char is alphanumeric
+ * c - character to check
+ * return - 1 if in range, 0 otherwise
+ */
+fn is_alpha_num(c: u8) -> bool;
+
+/**
+ * Allocates a substring from a buffer
+ * data_len - length of substring
+ * idx - start index
+ * buffer - buffer to copy from
+ * return - pointer to substring
+ */
+fn alloc_substring(data_len: usize, buffer: *u8, idx: usize) -> *u8;
+
+/**
+ * Allocates some space on the heap to use
+ * size - size of usage
+ */
+fn add_alloc(size: usize) -> *void;
+
+/**
+ * quits the program.
+ * code - exit code.
+ */
+fn quit(code: u8) -> void;

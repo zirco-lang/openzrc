@@ -80,11 +80,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1764242076,
-        "narHash": "sha256-sKoIWfnijJ0+9e4wRvIgm/HgE27bzwQxcEmo2J/gNpI=",
+        "lastModified": 1764950072,
+        "narHash": "sha256-BmPWzogsG2GsXZtlT+MTcAWeDK5hkbGRZTeZNW42fwA=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "2fad6eac6077f03fe109c4d4eb171cf96791faa4",
+        "rev": "f61125a668a320878494449750330ca58b78c557",
         "type": "github"
       },
       "original": {
@@ -222,16 +222,16 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1764558447,
-        "narHash": "sha256-CiZlXmc2l+nTjE7Iu9ouQ3TODThFQt9G40+pH6R8I9Y=",
+        "lastModified": 1765050447,
+        "narHash": "sha256-pAqg2PsxPnpXT7oxGKqd8IZroabebArnyCfOoe0MtDY=",
         "owner": "zirco-lang",
         "repo": "zrc",
-        "rev": "aa54c5b2b125d25e92606c243a030e71d6f7c5c8",
+        "rev": "fad7869a5e1480ab9659cc8a49fc68caa124ab81",
         "type": "github"
       },
       "original": {
         "owner": "zirco-lang",
-        "ref": "main",
+        "ref": "flake2",
         "repo": "zrc",
         "type": "github"
       }

@@ -1,7 +1,6 @@
 CC=clang
 CFLAGS= -Iinclude $(CEXTS)
 
-
 ZRC ?= $(shell which zrc)
 ZRCROOT ?= $(shell dirname $(ZRC))/..
 ZRCLIB ?= $(ZRCROOT)/include
