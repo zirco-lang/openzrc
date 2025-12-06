@@ -22,6 +22,7 @@
             git
             lazygit
             zirco-pkgs.packages.${system}.zrc
+            llvm.llvm
           ];
         };
         packages.zrc = pkgs.stdenv.mkDerivation {

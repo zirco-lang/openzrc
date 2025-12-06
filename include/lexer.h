@@ -14,6 +14,7 @@
         LT(LT_CLOSE_CURLY) \
         LT(LT_INT_LITERAL) \
         LT(LT_STRING_LITERAL) \
+        LT(LT_LITERAL) \
         LT(LT_ASTERISK) \
         LT(LT_EQUALS) \
         LT(LT_COMMA) \

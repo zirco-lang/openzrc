@@ -25,7 +25,7 @@ int main(int argc, char * argv[]) {
   // read arguments
   int current_arg = 1;
   int stage = 5;
-  stage2_output_type output_type_2 = OT_TREE;
+  stage2_output_type output_type_2 = OT_OBJ;
   for (int i = 1; i < argc; i++) {
 
     // Input file
@@ -39,6 +39,8 @@ int main(int argc, char * argv[]) {
         output_type_2 = OT_TREE;
       } else if (strcmp(argv[i], "tokens") == 0) {
         output_type_2 = OT_TOKENS;
+      } else if (strcmp(argv[i], "llvm") == 0) {
+        output_type_2 = OT_LLVM;
       }
     }
     else if (strcmp(argv[i], "-o") == 0) {
@@ -66,6 +68,10 @@ int main(int argc, char * argv[]) {
     }
   }
 
+  
+  char * original_name = add_alloc(256);
+  strcpy(original_name, file_name);
+
   int ret = 0;
   if (stage > 3 || stage == 1) {
     ret = stage1(file_name, output_name, include_dirs, num_includes);
@@ -73,7 +79,7 @@ int main(int argc, char * argv[]) {
     strcpy(file_name, output_name);
   }
   if (stage > 3 || stage == 2) {
-    ret = stage2(file_name, output_name, output_type_2);
+    ret = stage2(original_name, file_name, output_name, output_type_2);
     if (ret) quit(ret);
   }
   quit(ret);

@@ -3,9 +3,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <lexer.h>
 
 
 token * initial_token;
+token * literal_map;
 int total_tokens = 0;
 
 void print_indent(FILE * out, int num) {
@@ -24,6 +26,7 @@ void print_type(FILE * out, parse_type_t t, int in) {
     fprintf(out, "name = {\n");
     print_indent(out, in+2);
     print_token(out, *t.name);
+    fprintf(out, "\n");
     print_indent(out, in+1);
     fprintf(out, "}\n");
     print_indent(out, in);
@@ -35,13 +38,16 @@ void print_define(FILE * out, parse_define_t t, int in) {
     print_indent(out, in);
     fprintf(out, "define[\n");
     print_indent(out, in+1);
-    fprintf(out, "name={");
+    fprintf(out, "name={\n");
+    print_indent(out, in+2);
     print_token(out, *t.name);
+    fprintf(out, "\n");
+    print_indent(out, in+1);
     fprintf(out, "}\n");
     if (t.typ) {
         
         print_indent(out, in+1);
-        fprintf(out, "type={");
+        fprintf(out, "type={\n");
         print_type(out, *t.typ, in+2);
         fprintf(out, "\n");
         print_indent(out, in+1);
@@ -61,6 +67,7 @@ void print_arg(FILE * out, parse_arg_t t, int in) {
         print_indent(out,in+1);
         fprintf(out, "define={\n");
         print_define(out, t.def, in+2);
+        fprintf(out, "\n");
         print_indent(out,in+1);
         fprintf(out, "}\n");
         
@@ -115,7 +122,11 @@ void print_expr(FILE * out, parse_expr_t t, int in) {
     switch (t.type) {
         case ET_LITERAL: {
             print_indent(out, in+2);
-            print_token(out, *((token*)t.data));
+            token tok = *((token*)t.data);
+            fprintf(out, "literal[typ={%s},val={%s}]",
+                lexer_type_names[literal_map[tok.data_len].type],
+                 (char*)literal_map[tok.data_len].data
+                );
             break;
         }
         case ET_FN_CALL: {
@@ -161,11 +172,13 @@ void print_fn(FILE* out, parse_fn_t t, int in) {
     print_indent(out, in+1);
     fprintf(out, "ret ={\n");
     print_type(out, t.ret, in+2);
+    fprintf(out, "\n");
     print_indent(out, in+1);
     fprintf(out, "}\n");
     print_indent(out, in+1);
     fprintf(out, "body: {\n");
     print_expr(out, t.body, in+2);
+    fprintf(out, "\n");
     print_indent(out, in+1);
     fprintf(out, "}\n");
     print_indent(out, in);
@@ -222,7 +235,7 @@ int parse_scope(token * tokens, parse_scope_t * out) {
     if (tokens[0].type == LT_OPEN_CURLY) {
         ret++;
         int num_expr = 0;
-        while (tokens[ret].type != LT_CLOSE_CURLY && tokens+ret < initial_token + total_tokens) {
+        while (tokens[ret].type != LT_CLOSE_CURLY) {
             ret += parse_expr(tokens+ret, out->expr+num_expr);
             num_expr++;
         }
@@ -295,18 +308,20 @@ int parse_expr(token * tokens, parse_expr_t * out) {
     else if (tokens[i].type == LT_OPEN_CURLY) {
         out->type = ET_SCOPE;
         parse_scope_t * ret_scope = add_alloc(sizeof(parse_scope_t));
-        i += parse_scope(tokens, ret_scope);
+        int t = parse_scope(tokens, ret_scope);
+        i += t;
         out->data = (void*) ret_scope;
     }
-    else if (tokens[i].type == LT_STRING_LITERAL || tokens[i].type == LT_INT_LITERAL) {
+    else if (tokens[i].type == LT_LITERAL) {
         out->type = ET_LITERAL;
-        out->data = (void*) tokens;
+        out->data = (void*) (tokens+i);
         i++;
     }
     
     if (tokens[i].type == LT_SEMICOLON) {
         i++;
-    } 
+
+    }
     return i;
 }
 
@@ -327,7 +342,7 @@ int parse_arg(token * tokens, parse_arg_t * out) {
 }
 
 int parse_fn(token * tokens, parse_fn_t * out) {
-    int ret = -1;
+    int ret = 0;
     if (tokens[0].type == LT_LABEL && strcmp((char*)tokens[0].data, "fn") == 0) {
         ret = 1;
         if (tokens[ret].type == LT_LABEL && tokens[ret+1].type == LT_OPEN_PAREN) {
@@ -335,7 +350,6 @@ int parse_fn(token * tokens, parse_fn_t * out) {
             ret += 2;
             int arg_num = 0;
             while (tokens[ret].type != LT_CLOSE_PAREN) {
-                print_token(stdout, tokens[ret]);
                 ret += parse_arg(tokens+ret,out->args+arg_num);
                 arg_num++;
                 if (tokens[ret].type == LT_COMMA) {
@@ -366,7 +380,7 @@ int parse_fn(token * tokens, parse_fn_t * out) {
 int parse_root(token * tokens, parse_root_t * out) {
     int ret = 0;
     int i = 0;
-    while (tokens+ret < initial_token + total_tokens) {
+    while (ret < total_tokens) {
         if (tokens[ret].type == LT_LABEL && strcmp((char*)tokens[ret].data, "fn") == 0) {
 
             out->item[i].typ = RT_FN;
@@ -374,15 +388,18 @@ int parse_root(token * tokens, parse_root_t * out) {
             ret += parse_fn(tokens+ret, fn);
             out->item[i].data = (void*) fn;
             i++;
+        } else {
+            ret++;
         }
     }
     out->num_items = i;
     return ret;
 }
 
-parse_root_t * parse(token * tokens, int num_tokens) {
+parse_root_t * parse(token * tokens, int num_tokens, token * literals) {
     initial_token = tokens;
     total_tokens = num_tokens;
+    literal_map = literals;
     parse_root_t * out = (parse_root_t*)add_alloc(sizeof(parse_root_t));
     parse_root(tokens, out);
     return out;

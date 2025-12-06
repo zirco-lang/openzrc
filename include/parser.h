@@ -88,7 +88,7 @@ typedef struct root {
 /**
  * Parses a new expression from tokens and a number of them;
  */
-parse_root_t * parse(token * tokens, int num_tokens);
+parse_root_t * parse(token * tokens, int num_tokens, token * literals);
 
 /**
  * Prints the tree to the output.
