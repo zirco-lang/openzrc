@@ -1,7 +1,6 @@
 #include <stdio.zh>
 
 fn main(argc: usize, argv: **u8) -> i32 {
-   printf("Hellorld!\n");
-   return 0;   
+   printf("Hello, World!\n");
+   return 0;
 }
-
