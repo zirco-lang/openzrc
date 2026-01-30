@@ -23,7 +23,8 @@ C_OUTPUTS ?= $(C_SOURCES:src/%.c=$(OUTDIR)/%.o)
 
 
 all: clean $(OUTPUT)
-test: CEXTS = -DEXT_INT
+test: $(OUTDIR)/zrc input.zr
+	$(OUTDIR)/zrc -Ilib input.zr -o test
 
 $(OUTDIR)/zrc.exe: main
 	@cp $(OUTDIR)/zrc $(OUTDIR)/zrc.exe
@@ -49,6 +50,6 @@ $(OUTDIR)/zrc: target $(C_OUTPUTS) $(ZR_OUTPUTS)
 	@echo "Compiled: $@ from $(C_OUTPUTS) $(ZR_OUTPUTS)"
 
 clean:
-	@rm -rf $(OUTDIR)
+	@rm -rf $(OUTDIR) ./test
 	@echo "Cleaned all files!"
 
