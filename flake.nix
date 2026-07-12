@@ -21,7 +21,6 @@
             gdb
             git
             lazygit
-            zirco-pkgs.packages.${system}.zrc
             llvm.llvm
           ];
         };
@@ -30,14 +29,12 @@
           buildInputs = [
             pkgs.gnumake
             pkgs.clang
-            pkgs.which
-            zirco-pkgs.packages.${system}.zrc
+	    llvm.llvm
           ];
           src = ./.;
           buildPhase = ''
-            cp -r include src/
-            make clean all
-	        '';
+	    echo "Not implemented" >> target/zrc
+	  '';
           installPhase = ''
             mkdir -p $out/bin
             cp target/zrc $out/bin/
