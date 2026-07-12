@@ -33,7 +33,7 @@
           ];
           src = ./.;
           buildPhase = ''
-	    echo "Not implemented" >> target/zrc
+	    make all
 	  '';
           installPhase = ''
             mkdir -p $out/bin
