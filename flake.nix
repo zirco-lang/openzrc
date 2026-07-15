@@ -1,5 +1,5 @@
 {
-  description = "A very basic flake";
+  description = "OpenZRC, a Community-driven Zirco compiler";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -14,8 +14,8 @@
         llvm = pkgs.llvmPackages_20;
       in {
         devShells.default = (pkgs.mkShell.override {
-		stdenv = llvm.libcxxStdenv;
-	}) {
+		      stdenv = llvm.libcxxStdenv;
+	      }) {
           buildInputs = with pkgs; [
             llvm.clang
             gnumake
@@ -24,28 +24,29 @@
             git
             lazygit
             llvm.llvm
-	    llvm.libllvm
+	          llvm.libllvm
           ];
         };
         packages.zrc = pkgs.stdenv.mkDerivation {
           name = "zrc";
           buildInputs = [
             pkgs.gnumake
-            pkgs.clang
-	    llvm.llvm
+            llvm.clang
+	          llvm.llvm
+            llvm.libllvm
           ];
           src = ./.;
           buildPhase = ''
-	    make all
-	  '';
+            make all
+	        '';     
           installPhase = ''
             mkdir -p $out/bin
             cp target/zrc $out/bin/
           '';
-      };
+        };
 
-      packages.default = self.packages.${system}.zrc;
+        packages.default = self.packages.${system}.zrc;
 
-    }
-  );
+      }
+    );
 }
