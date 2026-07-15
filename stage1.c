@@ -29,6 +29,8 @@ enum ZR_TOK {
   TOK_LITERAL,
   TOK_EQ,
   TOK_PLUS,
+  TOK_OPEN_CURLY,
+  TOK_CLOSE_CURLY,
   TOK_UNKNOWN = -1,
 };
 
@@ -51,6 +53,11 @@ int check_char_toks(int ch) {
   case '+':
     return TOK_PLUS;
     break;
+  case '{':
+    return TOK_OPEN_CURLY;
+    break;
+  case '}':
+    return TOK_CLOSE_CURLY;
   default:
     return TOK_UNKNOWN;
   }
@@ -157,6 +164,12 @@ void print_token(int tok, char** buf) {
   case TOK_PLUS:
     printf("+\n");
     break;
+  case TOK_OPEN_CURLY:
+    printf("{\n");
+    break;
+  case TOK_CLOSE_CURLY:
+    printf("}\n");
+    break;
   case TOK_UNKNOWN:
     printf("Unknown value: %s\n", *buf);
     break;
@@ -211,6 +224,7 @@ enum parser_type {
   PARSER_LET_DECL,
   PARSER_UNARY_OP,
   PARSER_TOKEN,
+  PARSER_LIST,
   PARSER_UNKNOWN = -1,
 };
 
@@ -221,6 +235,14 @@ typedef struct {
   int typ;
   void * val;
 } GRAMMAR_T;
+
+/*
+ * Linked List of Grammar_ts
+ */
+typedef struct grammar_list {
+  GRAMMAR_T * val;
+  struct grammar_list * next;  
+} GRAMMAR_LIST;
 
 /*
  * Special case for `let` statements
@@ -240,6 +262,7 @@ typedef struct {
   GRAMMAR_T * rhs;
   TOKEN * typ;
 } UNARY_OP;
+
 /*
  * Parse type definitions
  */
@@ -325,6 +348,26 @@ int parse_stmt(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
     out->typ = PARSER_TOKEN;
     out->val = (void*)((*tokens)+idx);
     return 1;
+  } if (current.tok == TOK_OPEN_CURLY) {
+    out->typ = PARSER_LIST;
+    GRAMMAR_LIST * list = 0;
+    GRAMMAR_LIST * current_item;
+    int count = 1;
+    while ((tokens[0][idx + count]).tok != TOK_CLOSE_CURLY && idx + count < alloc_tokens) {
+      if (list == 0) {
+	list = malloc(sizeof(GRAMMAR_LIST));
+	current_item = list;
+      } else {
+	current_item->next = malloc(sizeof(GRAMMAR_LIST));
+	current_item = current_item->next;
+      }
+      current_item->val = malloc(sizeof(GRAMMAR_T));
+      current_item->next = 0;
+      count += parse_stmt(tokens, alloc_tokens, current_item->val, idx+count);
+    }
+    count++;
+    out->val = (void*)list;
+    return count;
   }
   // check for a let identifier
   if (current.tok == TOK_LET) {
@@ -337,6 +380,27 @@ int parse_stmt(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
   out->typ = PARSER_UNKNOWN;
   return 1;
   
+}
+
+int free_parser(GRAMMAR_T * out);
+
+void free_parser_list(GRAMMAR_LIST * list) {
+  if (list == 0) return;
+  GRAMMAR_LIST * prev = 0;
+  GRAMMAR_LIST * current = list;
+
+  while (list->next != 0) {
+    current = list;
+    while (current->next != 0) {
+      prev = current;
+      current = current->next;
+    }
+    free_parser(current->val);
+    free(current);
+    prev->next = 0;
+  }
+  free_parser(list->val);
+  free(list);
 }
 /*
  * This frees the memory allocated by the parser
@@ -369,6 +433,10 @@ int free_parser(GRAMMAR_T * out) {
     }
     break;
   case PARSER_LIST:
+    {
+      free_parser_list((GRAMMAR_LIST*)(out->val));      
+    }
+    break;
   }
 
   // this actually frees the current object
@@ -423,6 +491,17 @@ void print_tree(GRAMMAR_T * out) {
       print_token(tok->tok, &tok->val);
     }
     break;
+  case PARSER_LIST:
+    {
+      printf("Begin parser list\n");
+      GRAMMAR_LIST * l = (GRAMMAR_LIST *)out->val;
+      do {
+	if (l->val != 0) {
+	  print_tree(l->val);
+	}
+      } while ((l = l->next) != 0);
+      printf("end parser list\n");
+    }
   }
 }
 
@@ -601,6 +680,15 @@ int gen_stmt(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
 	LLVMBuildStore(*builder, ref, get);
       }   
     }
+    break;
+  case PARSER_LIST: {
+    GRAMMAR_LIST * l = (GRAMMAR_LIST *) parse_tree->val;
+    GRAMMAR_LIST * current = l;
+    while (current != 0) {
+      gen_stmt(current->val, mod, builder, fn, vl, ++idx);
+      current = current->next;
+    }
+  }
     break;
   }
   return 0;
