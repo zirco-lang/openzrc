@@ -13,15 +13,18 @@
         pkgs = import nixpkgs { inherit system; };
         llvm = pkgs.llvmPackages_20;
       in {
-        devShells.default = pkgs.mkShell {
+        devShells.default = (pkgs.mkShell.override {
+		stdenv = llvm.libcxxStdenv;
+	}) {
           buildInputs = with pkgs; [
+            llvm.clang
             gnumake
-            clang
             valgrind
             gdb
             git
             lazygit
             llvm.llvm
+	    llvm.libllvm
           ];
         };
         packages.zrc = pkgs.stdenv.mkDerivation {
