@@ -17,7 +17,6 @@ jobs:
                     - ubuntu-24.04-arm
                     - macos-latest
                     - macos-15-intel
-        env: LLVM_SYS_211_PREFIX: /usr/lib/llvm-21
         steps:
             - name: Checkout
               uses: actions/checkout@v7
