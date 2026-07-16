@@ -79,22 +79,22 @@ jobs:
             - name: Download X86 Linux build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-Linux-X64-release
+                  name: openzrc-Linux-X64-release
                   path: Linux-X64
             - name: Download ARM64 Linux build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-Linux-ARM64-release
+                  name: openzrc-Linux-ARM64-release
                   path: Linux-ARM64
             - name: Download X86 macOS build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-macOS-X64-release
+                  name: openzrc-macOS-X64-release
                   path: macOS-X64
             - name: Download ARM64 macOS build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-macOS-ARM64-release
+                  name: openzrc-macOS-ARM64-release
                   path: macOS-ARM64
             - name: Create tar archives
               run: |
