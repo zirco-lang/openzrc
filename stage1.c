@@ -255,7 +255,6 @@ typedef struct {
 
 /*
  * Case for unary operators
- * TODO: actually implement this...
  */
 typedef struct {
   GRAMMAR_T * lhs;
@@ -533,13 +532,14 @@ int parser(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out) {
 typedef struct value_list {
   char name[64];
   LLVMValueRef val;
+  LLVMTypeRef typ;
   struct value_list * next;
 } VALUE_LIST;
 
 /*
  * Adds a reference value to the linked list.
  */
-void add_value(char * name, LLVMValueRef val, VALUE_LIST ** vl) {
+void add_value(char * name, LLVMValueRef val, LLVMTypeRef typ, VALUE_LIST ** vl) {
   VALUE_LIST * current;
   if (*vl == 0) {
     *vl = malloc(sizeof(VALUE_LIST));
@@ -555,6 +555,7 @@ void add_value(char * name, LLVMValueRef val, VALUE_LIST ** vl) {
   }
   current->next = 0;
   strcpy(current->name, name);
+  memcpy(&current->typ, &typ, sizeof(LLVMTypeRef));
   memcpy(&current->val, &val, sizeof(LLVMValueRef));
 }
 
@@ -582,7 +583,7 @@ void free_list(VALUE_LIST** vl) {
 /*
  * Gets a value from the value linked list.
  */
-int get_value(char * name, VALUE_LIST ** vl, LLVMValueRef * out) {
+int get_value(char * name, VALUE_LIST ** vl, LLVMValueRef * out, LLVMTypeRef * typ) {
   VALUE_LIST * current = *vl;
   while (current != 0 && (strcmp(current->name, name) != 0)) {
     current = current->next;
@@ -593,6 +594,7 @@ int get_value(char * name, VALUE_LIST ** vl, LLVMValueRef * out) {
   }
   if (strcmp(current->name, name) == 0) {
      *out = current->val;
+     *typ = current->typ;
   }
   return 0;
 }
@@ -626,7 +628,17 @@ int gen_expr(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
 	  *out = LLVMConstInt(LLVMInt32Type(), atoi(tok->val), 0);
 	}
 	break;
-	// TODO: variables
+      case TOK_IDENTIFIER:
+	{
+	  LLVMTypeRef typ;
+	  LLVMValueRef ptr;
+	  get_value(tok->val, vl, &ptr, &typ);
+	  char name[64];
+	  snprintf(name, 64, "__%s_ld", tok->val);
+	  *out = LLVMBuildLoad2(*builder, typ, ptr, name);
+	}
+	break;
+
       }
       
     }
@@ -671,12 +683,13 @@ int gen_stmt(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
       LLVMTypeRef var_typ;
       get_type_ref(&var_typ, typ);
 
-      add_value(name, LLVMBuildAlloca(*builder, var_typ, name), vl);
+      add_value(name, LLVMBuildAlloca(*builder, var_typ, name), var_typ, vl);
       if (decl->val != 0) {
 	LLVMValueRef ref;
 	LLVMValueRef get;
+	LLVMTypeRef typ;
 	gen_expr(decl->val, mod, builder, vl, &ref, 0);
-	get_value(name, vl, &get);
+	get_value(name, vl, &get, &typ);
 	LLVMBuildStore(*builder, ref, get);
       }   
     }
