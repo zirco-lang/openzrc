@@ -12,7 +12,10 @@ all: target target/zrc
 target/s1_%.o: stage1/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-target/zrc: target/stage1
+target/zrc: target/openzrc
+	cp $< $@
+
+target/openzrc: target/stage1
 	cp $< $@
 
 target/stage1: $(STAGE1OBJ)
