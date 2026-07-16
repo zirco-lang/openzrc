@@ -11,7 +11,7 @@
     flake-utils.lib.eachDefaultSystem(system:
       let
         pkgs = import nixpkgs { inherit system; };
-        llvm = pkgs.llvmPackages_20;
+        llvm = pkgs.llvmPackages_21;
       in {
         devShells.default = (pkgs.mkShell.override {
 		      stdenv = llvm.libcxxStdenv;
