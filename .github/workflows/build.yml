@@ -1,0 +1,130 @@
+name: "build"
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+    merge_group:
+
+jobs:
+    build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os:
+                    - ubuntu-24.04
+                    - ubuntu-24.04-arm
+                    - macos-latest
+                    - macos-15-intel
+        env: LLVM_SYS_211_PREFIX: /usr/lib/llvm-21
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+              with:
+                  # Make sure the actual branch is checked out when running on pull requests
+                  ref: ${{ github.head_ref }}
+                  repository: ${{github.event.pull_request.head.repo.full_name || github.repository }}
+            - name: Install Nix
+            - uses: cachix/install-nix-action@v31
+              with:
+                github_access_token: ${{ secrets.GITHUB_TOKEN }}
+              name: Get nix
+            - name: Build
+              run: nix build
+            - name: Check flake
+              run: nix flake check
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v7
+              with:
+                  path: result
+                  name: openzrc-${{ runner.os }}-${{ runner.arch }}-release
+    release:
+        # only on commits to main
+        needs: [build, build-debs]
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+            - name: Delete existing nightly release
+              uses: actions/github-script@v9
+              with:
+                  script: |
+                      try {
+                          const release = await github.rest.repos.getReleaseByTag({
+                              owner: context.repo.owner,
+                              repo: context.repo.repo,
+                              tag: 'nightly',
+                          });
+                          await github.rest.repos.deleteRelease({
+                              owner: context.repo.owner,
+                              repo: context.repo.repo,
+                              release_id: release.data.id,
+                          });
+                          console.log('Deleted existing nightly release.');
+                      } catch (e) {
+                          if (e.status === 404) {
+                              console.log('No nightly release found, nothing to delete.');
+                          } else {
+                              throw e;
+                          }
+                      }
+            - name: Update nightly tag
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git tag -d nightly || true
+                  git push origin :refs/tags/nightly || true
+                  git tag nightly
+                  git push origin nightly
+            - name: Download X86 Linux build artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: zrc-Linux-X64-release
+                  path: Linux-X64
+            - name: Download ARM64 Linux build artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: zrc-Linux-ARM64-release
+                  path: Linux-ARM64
+            - name: Download X86 macOS build artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: zrc-macOS-X64-release
+                  path: macOS-X64
+            - name: Download ARM64 macOS build artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: zrc-macOS-ARM64-release
+                  path: macOS-ARM64
+            - name: Create tar archives
+              run: |
+                  tar -czf openzrc-linux-x64.tar.gz -C Linux-X64 .
+                  tar -czf openzrc-linux-arm64.tar.gz -C Linux-ARM64 .
+                  tar -czf openzrc-macos-x64.tar.gz -C macOS-X64 .
+                  tar -czf openzrc-macos-arm64.tar.gz -C macOS-ARM64 .
+            - name: Update `nightly` release
+              uses: softprops/action-gh-release@v3
+              with:
+                  tag_name: nightly
+                  name: Latest Build
+                  body: |
+                      This is an automated build of the `openzrc` project from the `main` branch.
+                      This build system is based on the original one for `zrc`
+
+                      **Commit:** ${{ github.sha }}
+                      **Date:** ${{ github.event.head_commit.timestamp }}
+                  draft: false
+                  prerelease: false
+                  make_latest: false
+                  fail_on_unmatched_files: true
+                  files: |
+                      openzrc-linux-x64.tar.gz
+                      openzrc-linux-arm64.tar.gz
+                      openzrc-macos-x64.tar.gz
+                      openzrc-macos-arm64.tar.gz
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
