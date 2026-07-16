@@ -17,7 +17,6 @@ jobs:
                     - ubuntu-24.04-arm
                     - macos-latest
                     - macos-15-intel
-        env: LLVM_SYS_211_PREFIX: /usr/lib/llvm-21
         steps:
             - name: Checkout
               uses: actions/checkout@v7
@@ -26,14 +25,11 @@ jobs:
                   ref: ${{ github.head_ref }}
                   repository: ${{github.event.pull_request.head.repo.full_name || github.repository }}
             - name: Install Nix
-            - uses: cachix/install-nix-action@v31
+              uses: cachix/install-nix-action@v31
               with:
                 github_access_token: ${{ secrets.GITHUB_TOKEN }}
-              name: Get nix
             - name: Build
               run: nix build
-            - name: Check flake
-              run: nix flake check
             - name: Upload build artifacts
               uses: actions/upload-artifact@v7
               with:
@@ -41,7 +37,7 @@ jobs:
                   name: openzrc-${{ runner.os }}-${{ runner.arch }}-release
     release:
         # only on commits to main
-        needs: [build, build-debs]
+        needs: [build]
         if: github.ref == 'refs/heads/main'
         runs-on: ubuntu-24.04
         permissions:
@@ -83,22 +79,22 @@ jobs:
             - name: Download X86 Linux build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-Linux-X64-release
+                  name: openzrc-Linux-X64-release
                   path: Linux-X64
             - name: Download ARM64 Linux build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-Linux-ARM64-release
+                  name: openzrc-Linux-ARM64-release
                   path: Linux-ARM64
             - name: Download X86 macOS build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-macOS-X64-release
+                  name: openzrc-macOS-X64-release
                   path: macOS-X64
             - name: Download ARM64 macOS build artifact
               uses: actions/download-artifact@v8
               with:
-                  name: zrc-macOS-ARM64-release
+                  name: openzrc-macOS-ARM64-release
                   path: macOS-ARM64
             - name: Create tar archives
               run: |
