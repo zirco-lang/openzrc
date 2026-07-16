@@ -42,6 +42,7 @@
           installPhase = ''
             mkdir -p $out/bin
             cp target/zrc $out/bin/
+            cp target/openzrc $out/bin/
           '';
         };
 
