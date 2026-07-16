@@ -1,55 +1,30 @@
 CC=clang
-CFLAGS= -Iinclude $(CEXTS)
+CFLAGS=-g `llvm-config --cflags`
+LD=clang++
+LDFLAGS=`llvm-config --cxxflags --ldflags --libs core executionengine mcjit interpreter analysis native bitwriter --system-libs`
+.PHONY: all clean target
 
+all: target target/zrc
 
-ZRC ?= $(shell which zrc)
-ZRCROOT ?= $(shell dirname $(ZRC))/..
-ZRCLIB ?= $(ZRCROOT)/include
-ZRFLAGS ?= -I${ZRCLIB} -Iinclude $(ZREXTS)
+target/%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-OUTDIR ?= ./target
+target/zrc: target/stage1
+	cp $< $@
 
-OUTPUT=main
-ifeq ($(OS),Windows_NT)
-    OUTPUT = $(OUTDIR)/zrc.exe
-endif
+target/stage1: target/stage1.o
+	$(LD) $< $(LDFLAGS) -o $@
 
-ZR_SOURCES ?= $(wildcard src/*.zr)
-ZR_OUTPUTS ?= $(ZR_SOURCES:src/%.zr=$(OUTDIR)/%.o)
-C_SOURCES ?= $(wildcard src/*.c)
-C_OUTPUTS ?= $(C_SOURCES:src/%.c=$(OUTDIR)/%.o)
+output.bc: target/stage1 example.zr
+	./$< ./example.zr
 
-.PHONY: all clean main test interrupt
+output.ll: output.bc
+	llvm-dis $<
 
-
-all: clean $(OUTPUT)
-test: $(OUTDIR)/zrc input.zr
-	$(OUTDIR)/zrc -Ilib input.zr -o test
-
-$(OUTDIR)/zrc.exe: main
-	@cp $(OUTDIR)/zrc $(OUTDIR)/zrc.exe
-	@echo "Created exe file"
-
-main: target $(OUTDIR)/zrc
-
+test_output: output.bc
+	clang $< -o $@
 target:
-	@mkdir -p $(OUTDIR)
-
-$(OUTDIR)/%.o: src/%.c
-	@$(CC) $(CFLAGS) -o $@ -c $<
-	@echo "Compiled $@ from $<"
-
-$(OUTDIR)/%.o: src/%.zr
-	cp $< tmp.zr
-	$(ZRC) --emit object $(ZRFLAGS) -o $@ tmp.zr
-	rm tmp.zr
-	@echo "Compiled $@ from $<"
-
-$(OUTDIR)/zrc: target $(C_OUTPUTS) $(ZR_OUTPUTS)
-	@$(CC) $(CFLAGS) -lc -o $@ $(C_OUTPUTS) $(ZR_OUTPUTS)
-	@echo "Compiled: $@ from $(C_OUTPUTS) $(ZR_OUTPUTS)"
+	mkdir -p target
 
 clean:
-	@rm -rf $(OUTDIR) ./test
-	@echo "Cleaned all files!"
-
+	rm -rf target *.bc *.ll test_output
