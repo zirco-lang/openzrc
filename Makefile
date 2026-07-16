@@ -15,16 +15,16 @@ target/zrc: target/stage1
 target/stage1: target/stage1.o
 	$(LD) $< $(LDFLAGS) -o $@
 
-output.bc: target/stage1 example.zr
-	./$< ./example.zr
+output.bc: clean target target/stage1 example.zr
+	./target/stage1 ./example.zr
 
 output.ll: output.bc
 	llvm-dis $<
 
-test_output: output.bc
+a.out: output.bc
 	clang $< -o $@
 target:
 	mkdir -p target
 
 clean:
-	rm -rf target *.bc *.ll test_output
+	rm -rf target *.bc *.ll a.out
