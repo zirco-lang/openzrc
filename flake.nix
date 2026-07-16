@@ -24,7 +24,7 @@
             git
             lazygit
             llvm.llvm
-	          llvm.libllvm
+            llvm.libllvm
           ];
         };
         packages.zrc = pkgs.stdenv.mkDerivation {
@@ -32,12 +32,12 @@
           buildInputs = [
             pkgs.gnumake
             llvm.clang
-	          llvm.llvm
+            llvm.llvm
             llvm.libllvm
           ];
           src = ./.;
           buildPhase = ''
-            make all
+            make clean all
 	        '';     
           installPhase = ''
             mkdir -p $out/bin
