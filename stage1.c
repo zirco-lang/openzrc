@@ -33,6 +33,7 @@ enum ZR_TOK {
   TOK_PLUS,
   TOK_OPEN_CURLY,
   TOK_CLOSE_CURLY,
+  TOK_RETURN,
   TOK_UNKNOWN = -1,
 };
 
@@ -98,7 +99,7 @@ int next_tok(FILE * fptr, char ** out) {
   // check for keywords (only let is found here for now...)
   buf[idx] = 0;
   if (strcmp(buf, "let") == 0) return TOK_LET;
-
+  if (strcmp(buf, "return") == 0) return TOK_RETURN;
   // this is a case to find things that start with numbers
   int start = 0;
   if (idx > 0) start = 1;
@@ -172,6 +173,9 @@ void print_token(int tok, char** buf) {
   case TOK_CLOSE_CURLY:
     printf("}\n");
     break;
+  case TOK_RETURN:
+    printf("return\n");
+    break;
   case TOK_UNKNOWN:
     printf("Unknown value: %s\n", *buf);
     break;
@@ -228,6 +232,7 @@ enum parser_type {
   PARSER_STMT = 0,
   PARSER_EXPR,
   PARSER_LET_DECL,
+  PARSER_RETURN,
   PARSER_UNARY_OP,
   PARSER_TOKEN,
   PARSER_LIST,
@@ -381,6 +386,25 @@ int parse_stmt(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
     out->val = (void *) val;
     return parse_let_decl(tokens, alloc_tokens, val, idx) + 1;
   }
+  if (current.tok == TOK_RETURN) {
+    out->typ = PARSER_RETURN;
+    out->val = 0;
+    GRAMMAR_T val;
+    val.typ = PARSER_TOKEN;
+    val.val = 0;
+    int len = 1;
+    if (tokens[0][idx+1].tok != TOK_SEMICOLON) {
+      out->val = malloc(sizeof(GRAMMAR_T));
+      len += parse_expr(tokens, alloc_tokens, (GRAMMAR_T*)(out->val), idx+1);
+      if (tokens[0][idx+len].tok != TOK_SEMICOLON) {
+	quit(1, "missing semicolon at end of return");
+      }
+      len++;
+    }
+    return len;
+    
+    
+  }
   // in this case we don't know what we just hit, so check it.
   out->typ = PARSER_UNKNOWN;
   return 1;
@@ -507,6 +531,16 @@ void print_tree(GRAMMAR_T * out) {
       } while ((l = l->next) != 0);
       printf("end parser list\n");
     }
+    break;
+  case PARSER_RETURN:
+    {
+    printf("begin parser return\n");
+    if (out->val != 0) {
+      print_tree(((GRAMMAR_T *)(out->val)));
+    }
+    printf("end parser return\n");
+    }
+    break;
   }
 }
 
@@ -708,6 +742,19 @@ int gen_stmt(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
       current = current->next;
     }
   }
+    break;
+  case PARSER_RETURN:
+    {
+      LLVMValueRef ret_val;
+      if (parse_tree->val == 0) {
+	ret_val = LLVMConstInt(LLVMInt32Type(), 0, 0);
+      } else {
+	GRAMMAR_T * val = (GRAMMAR_T *) parse_tree->val;
+	gen_expr(val, mod, builder, vl, &ret_val, 0);
+	
+      }
+      LLVMBuildRet(*builder, ret_val);
+    }
     break;
   }
   return 0;
