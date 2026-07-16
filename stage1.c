@@ -233,7 +233,7 @@ enum parser_type {
   PARSER_EXPR,
   PARSER_LET_DECL,
   PARSER_RETURN,
-  PARSER_UNARY_OP,
+  PARSER_BINARY_OP,
   PARSER_TOKEN,
   PARSER_LIST,
   PARSER_UNKNOWN = -1,
@@ -271,7 +271,7 @@ typedef struct {
   GRAMMAR_T * lhs;
   GRAMMAR_T * rhs;
   TOKEN * typ;
-} UNARY_OP;
+} BINARY_OP;
 
 /*
  * Parse type definitions
@@ -292,7 +292,7 @@ int parse_type(TOKEN ** tokens, int alloc_tokens, int idx) {
  */
 int parse_expr(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
   if (idx+1 < alloc_tokens && tokens[0][idx+1].tok == TOK_PLUS) {
-    UNARY_OP * unary = malloc(sizeof(UNARY_OP));
+    BINARY_OP * binary = malloc(sizeof(BINARY_OP));
     GRAMMAR_T * lhs = malloc(sizeof(GRAMMAR_T));
     GRAMMAR_T * rhs = malloc(sizeof(GRAMMAR_T));
     
@@ -302,12 +302,12 @@ int parse_expr(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
     rhs->typ = PARSER_TOKEN;
     rhs->val = (void*)(*tokens+idx+2);
 
-    unary->lhs = lhs;
-    unary->rhs = rhs;
-    unary->typ = (*tokens+idx+1);
+    binary->lhs = lhs;
+    binary->rhs = rhs;
+    binary->typ = (*tokens+idx+1);
 
-    out->typ = PARSER_UNARY_OP;
-    out->val = (void*)unary;
+    out->typ = PARSER_BINARY_OP;
+    out->val = (void*)binary;
     return 3;
   }
   
@@ -453,9 +453,9 @@ int free_parser(GRAMMAR_T * out) {
     }
     break;
     // same with unary operators
-  case PARSER_UNARY_OP:
+  case PARSER_BINARY_OP:
     {
-      UNARY_OP * decl = (UNARY_OP*)(out->val);
+      BINARY_OP * decl = (BINARY_OP*)(out->val);
       free_parser((GRAMMAR_T*)(decl->rhs));
       free_parser((GRAMMAR_T*)(decl->lhs));
       free(decl);
@@ -498,10 +498,10 @@ void print_tree(GRAMMAR_T * out) {
       printf("End let decl\n");
     }
     break;
-  case PARSER_UNARY_OP:
+  case PARSER_BINARY_OP:
     {
-      UNARY_OP * val = (UNARY_OP*)(out->val);
-      printf("Begin Unary OP\n");
+      BINARY_OP * val = (BINARY_OP*)(out->val);
+      printf("Begin Binary OP\n");
       printf("typ: \n  ");
       print_token(val->typ->tok, &val->typ->val);
       printf("begin lhs\n");
@@ -510,7 +510,7 @@ void print_tree(GRAMMAR_T * out) {
       printf("begin rhs\n");
       print_tree(val->rhs);
       printf("end rhs\n");
-      printf("End unary op\n");
+      printf("End Binary op\n");
     }
     break;
   case PARSER_TOKEN:
@@ -683,9 +683,9 @@ int gen_expr(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
       
     }
     break;
-  case PARSER_UNARY_OP:
+  case PARSER_BINARY_OP:
     {
-      UNARY_OP * uop = (UNARY_OP*) parse_tree->val;
+      BINARY_OP * uop = (BINARY_OP*) parse_tree->val;
       LLVMValueRef lhs;
       LLVMValueRef rhs;
       gen_expr(uop->lhs, mod, builder, vl, &lhs, i+1);
