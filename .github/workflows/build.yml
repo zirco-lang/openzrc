@@ -39,7 +39,7 @@ jobs:
                   name: openzrc-${{ runner.os }}-${{ runner.arch }}-release
     release:
         # only on commits to main
-        needs: [build, build-debs]
+        needs: [build]
         if: github.ref == 'refs/heads/main'
         runs-on: ubuntu-24.04
         permissions:
