@@ -1,6 +1,0 @@
-#include <stdio.zh>
-
-fn main(argc: usize, argv: **u8) -> i32 {
-   printf("%s\n", "test");
-   return 0;
-}
