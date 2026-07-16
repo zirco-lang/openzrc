@@ -10,6 +10,8 @@
 #include <string.h>
 #include <stdint.h>
 
+// forward declare quit
+void quit(int code, char * reason);
 
 //===================================
 // Begin Lexer
@@ -174,7 +176,11 @@ void print_token(int tok, char** buf) {
     printf("Unknown value: %s\n", *buf);
     break;
   default:
-    printf("Unimplemented token: %s\n", *buf);
+    {
+    char error[128];
+    snprintf(error, 128, "Unimplemented token: %s\n", *buf);
+    quit(1, error);
+    }
     break;
   }
 }
@@ -724,9 +730,6 @@ int test_gen_fn(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * bui
   
   // Generates a single statement from the parse tree
   gen_stmt((GRAMMAR_T*)parse_tree->val, mod, builder, &main, vl, 0);
-
-  // makes the function return
-  LLVMBuildRet(*builder, LLVMConstInt(LLVMInt32Type(), 0, 0));
   
   return 0;
 }
@@ -772,6 +775,30 @@ int gen_code(char * input_name, char * output_name, GRAMMAR_T * parse_tree) {
 // Main Program
 //====================
 
+ GRAMMAR_T* parse_tree_main = 0;
+ TOKEN * tokens_main = 0;
+ int alloc_tokens_main;
+ int num_tokens_main = 0;
+
+/*
+ * exit the program
+ */
+void quit(int code, char * reason) {
+   if (code != 0) {
+     printf("Program crashed! Reason: %s\n", reason);
+   }
+   
+   if (parse_tree_main != 0) free_parser(parse_tree_main);
+   if (tokens_main != 0) {
+     for (int i = 0; i < num_tokens_main; i++) {
+       free(tokens_main[i].val);
+     }
+     free(tokens_main);
+   }
+   
+   exit(code);
+ }
+ 
 /*
  * This is our main program function
  */
@@ -792,36 +819,31 @@ int main(int argc, char ** argv) {
   }
 
   // allocate a bunch of tokens to read. this number is low for testing.
-  int alloc_tokens = 32;
-  TOKEN * tokens = malloc(sizeof(TOKEN) * alloc_tokens);
+  alloc_tokens_main = 32;
+  tokens_main = malloc(sizeof(TOKEN) * alloc_tokens_main);
 
   // run the lexer and stop reading from the file.
-  int num_tokens = lexer(fptr, &tokens, alloc_tokens);
+  num_tokens_main = lexer(fptr, &tokens_main, alloc_tokens_main);
   fclose(fptr);
 
   // set up the parser
-  GRAMMAR_T * parse_tree = malloc(sizeof(GRAMMAR_T));
-  (*parse_tree).typ = PARSER_UNKNOWN;
+  parse_tree_main = malloc(sizeof(GRAMMAR_T));
+  (*parse_tree_main).typ = PARSER_UNKNOWN;
 
   // run the parser
-  int parsed = parser(&tokens, alloc_tokens, parse_tree);
+  int parsed = parser(&tokens_main, alloc_tokens_main, parse_tree_main);
   if (parsed < 0) {
     printf("unable to parse information properly\n");
   }
   
   // Print the parse tree
   printf("Parse tree:\n");
-  print_tree(parse_tree);
+  print_tree(parse_tree_main);
 
   // start to generate some basic code
-  gen_code(file, "output.bc", parse_tree);
+  gen_code(file, "output.bc", parse_tree_main);
 
   // free the parser and lexer since we are good.
-  free_parser(parse_tree);
-  for (int i = 0; i < num_tokens; i++) {
-    free(tokens[i].val);
-  }
-  free(tokens);
-  
+  quit(0, "success");
   return 0;
 }
