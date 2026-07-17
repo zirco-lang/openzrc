@@ -23,6 +23,8 @@ int check_char_toks(int ch) {
   case '+':
     return TOK_PLUS;
     break;
+  case '-':
+    return TOK_MINUS;
   case '{':
     return TOK_OPEN_CURLY;
     break;
@@ -118,6 +120,9 @@ void print_token(int tok, char** buf) {
     break;
   case TOK_SEMICOLON:
     printf(";\n");
+    break;
+  case TOK_MINUS:
+    printf("-\n");
     break;
   case TOK_I32:
     printf("i32\n");
