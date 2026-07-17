@@ -17,11 +17,22 @@ int parse_type(TOKEN ** tokens, int alloc_tokens, int idx) {
   }
 }
 
+int is_binop(int tok) {
+  switch (tok) {
+  case TOK_PLUS:
+  case TOK_MINUS:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
 /*
  * Parse an expression
  */
 int parse_expr(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
-  if (idx+1 < alloc_tokens && tokens[0][idx+1].tok == TOK_PLUS) {
+  if (idx+1 < alloc_tokens && is_binop(tokens[0][idx+1].tok)) {
     BINARY_OP * binary = malloc(sizeof(BINARY_OP));
     GRAMMAR_T * lhs = malloc(sizeof(GRAMMAR_T));
     GRAMMAR_T * rhs = malloc(sizeof(GRAMMAR_T));

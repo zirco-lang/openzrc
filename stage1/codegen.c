@@ -126,8 +126,15 @@ int gen_expr(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
       case TOK_PLUS:
 	{
 	  char name[32];
-	  snprintf(name, 32, "_add_%d", i);
+	  snprintf(name, 32, "__add_%d", i);
 	  *out = LLVMBuildAdd(*builder, lhs, rhs, name);
+	}
+	break;
+      case TOK_MINUS:
+	{
+	  char name[32];
+	  snprintf(name, 32, "__sub_%d", i);
+	  *out = LLVMBuildSub(*builder, lhs, rhs, name);
 	}
 	break;
       }
