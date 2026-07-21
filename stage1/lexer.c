@@ -154,7 +154,7 @@ void print_token(int tok, char** buf) {
   default:
     {
     char error[128];
-    snprintf(error, 128, "Unimplemented token: %s\n", *buf);
+    snprintf(error, 128, "Unimplemented token value in print_tok: %d", tok);
     quit(1, error);
     }
     break;

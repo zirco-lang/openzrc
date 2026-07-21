@@ -13,6 +13,7 @@ enum parser_type {
   PARSER_BINARY_OP,
   PARSER_TOKEN,
   PARSER_LIST,
+  PARSER_FN,
   PARSER_UNKNOWN = -1,
 };
 
