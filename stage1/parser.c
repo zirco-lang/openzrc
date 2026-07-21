@@ -181,8 +181,9 @@ int free_parser(GRAMMAR_T * out) {
     // statements always have a value
   case PARSER_STMT:
   case PARSER_EXPR:
+  case PARSER_RETURN:
     {
-      free_parser((GRAMMAR_T*)(out->val));
+      if (out->val != 0) free_parser((GRAMMAR_T*)(out->val));
     }
     break;
     // let decls have their own objects
