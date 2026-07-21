@@ -30,6 +30,16 @@ int check_char_toks(int ch) {
     break;
   case '}':
     return TOK_CLOSE_CURLY;
+    break;
+  case '(':
+    return TOK_OPEN_PAREN;
+    break;
+  case ')':
+    return TOK_CLOSE_PAREN;
+    break;
+  case '>':
+    return TOK_GT;
+    break;
   default:
     return TOK_UNKNOWN;
   }
@@ -69,6 +79,7 @@ int next_tok(FILE * fptr, char ** out) {
   buf[idx] = 0;
   if (strcmp(buf, "let") == 0) return TOK_LET;
   if (strcmp(buf, "return") == 0) return TOK_RETURN;
+  if (strcmp(buf, "fn") == 0) return TOK_FN;
   // this is a case to find things that start with numbers
   int start = 0;
   if (idx > 0) start = 1;
@@ -147,6 +158,18 @@ void print_token(int tok, char** buf) {
     break;
   case TOK_RETURN:
     printf("return\n");
+    break;
+  case TOK_FN:
+    printf("fn\n");
+    break;
+  case TOK_OPEN_PAREN:
+    printf("(\n");
+    break;
+  case TOK_CLOSE_PAREN:
+    printf(")\n");
+    break;
+  case TOK_GT:
+    printf(">\n");
     break;
   case TOK_UNKNOWN:
     printf("Unknown value: %s\n", *buf);
