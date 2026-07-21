@@ -61,7 +61,7 @@ int parse_expr(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
 /*
   Parse a `let` declaration
  */
-int parse_let_decl(TOKEN ** tokens, int alloc_tokens, LET_DECL * out, int idx) {
+int parse_let_decl(TOKEN ** tokens, int alloc_tokens, PARSE_DECL * out, int idx) {
 
   // child value is unknown until needed
   GRAMMAR_T * val = malloc(sizeof(GRAMMAR_T));
@@ -123,7 +123,7 @@ int parse_stmt(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
   // check for a let identifier
   if (current.tok == TOK_LET) {
     out->typ = PARSER_LET_DECL;
-    LET_DECL * val = malloc(sizeof(LET_DECL));
+    PARSE_DECL * val = malloc(sizeof(PARSE_DECL));
     out->val = (void *) val;
     return parse_let_decl(tokens, alloc_tokens, val, idx) + 1;
   }
@@ -181,14 +181,16 @@ int free_parser(GRAMMAR_T * out) {
     // statements always have a value
   case PARSER_STMT:
   case PARSER_EXPR:
+  case PARSER_RETURN:
     {
-      free_parser((GRAMMAR_T*)(out->val));
+      if (out->val != 0) free_parser((GRAMMAR_T*)(out->val));
     }
     break;
-    // let decls have their own objects
+    // decls have their own objects
   case PARSER_LET_DECL:
+  case PARSER_FN:
     {
-      LET_DECL * decl = (LET_DECL*)(out->val);
+      PARSE_DECL * decl = (PARSE_DECL*)(out->val);
       free_parser((GRAMMAR_T*)(decl->val));
       free(decl);
     }
@@ -214,6 +216,54 @@ int free_parser(GRAMMAR_T * out) {
   return 0;
 }
 
+
+/**
+ * Parses a function
+ */
+int parse_fn(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
+  // check for fn decl
+  if (tokens[0][idx].tok != TOK_FN) {
+    return -1;
+  }
+  // parse identifier
+  PARSE_DECL * outd = malloc(sizeof(PARSE_DECL));
+  outd->identifier = &tokens[0][idx+1];
+
+  // parse open paren
+  if (tokens[0][idx+2].tok != TOK_OPEN_PAREN) {
+    return -1;
+  }
+
+  // parse args
+  int idx2 = 3;
+  // todo: fn args
+
+  // check for type def
+  if (tokens[0][idx+idx2].tok != TOK_CLOSE_PAREN ||
+      tokens[0][idx+idx2+1].tok != TOK_MINUS ||
+      tokens[0][idx+idx2+2].tok != TOK_GT) {
+    return -1;
+  }
+
+  // check for valid type
+  if (parse_type(tokens, alloc_tokens, idx+idx2+3) == -1) {
+    return -1;
+  }
+
+  // set up output
+  outd->typ = &tokens[0][idx+idx2+3];
+  outd->val = malloc(sizeof(GRAMMAR_T));
+  outd->val->typ = PARSER_UNKNOWN;
+
+  // parse inside of function
+  int tmp = parse_stmt(tokens, alloc_tokens, outd->val, idx+idx2+4);
+
+  // output data and return length
+  out->typ = PARSER_FN;
+  out->val = (void*) outd;
+  return idx2+4+tmp;
+}
+
 /*
  * This is for early development, and prints a parse tree
  */
@@ -232,7 +282,7 @@ void print_tree(GRAMMAR_T * out) {
   case PARSER_LET_DECL:
     {
       printf("Begin Let Decl:\n");
-      LET_DECL * val = (LET_DECL*)(out->val);
+      PARSE_DECL * val = (PARSE_DECL*)(out->val);
       printf("  identifier: %s\n", val->identifier->val);
       printf("  typ: %s\n", val->typ->val);
       print_tree(val->val);
@@ -282,19 +332,28 @@ void print_tree(GRAMMAR_T * out) {
     printf("end parser return\n");
     }
     break;
+  case PARSER_FN:
+    {
+      printf("begin parser fn\n");
+      PARSE_DECL * val = (PARSE_DECL*)(out->val);
+      printf("  identifier: %s\n", val->identifier->val);
+      printf("  typ: %s\n", val->typ->val);
+      print_tree(val->val);
+      printf("end parser fn\n");
+    }
+    break;
   }
 }
+
 
 /*
  * This is the main parser
  */
 int parser(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out) {
   // since we aren't ready for a full implementation, we are just parsing a statement.
-  out->typ = PARSER_STMT;
   int idx = 0;
-  GRAMMAR_T * val = malloc(sizeof(GRAMMAR_T));
-  out->val = (void*) val;
-  int tmp = parse_stmt(tokens, alloc_tokens, val, idx);
+  out->typ = PARSER_UNKNOWN;
+  int tmp = parse_fn(tokens, alloc_tokens, out, idx);
   if (tmp < 0) {
     return tmp;
   }

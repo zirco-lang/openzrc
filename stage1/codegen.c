@@ -153,7 +153,7 @@ int gen_stmt(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
   switch (parse_tree->typ) {
   case PARSER_LET_DECL:
     {
-      LET_DECL * decl = (LET_DECL*)parse_tree->val;
+      PARSE_DECL * decl = (PARSE_DECL*)parse_tree->val;
       char * name = decl->identifier->val;
       int typ = decl->typ->tok;
       LLVMTypeRef var_typ;
@@ -196,27 +196,34 @@ int gen_stmt(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
   return 0;
 }
 
-/*
- * This is for early development, where no function definitions exist. This generates a test function.
+/**
+ * This generates a function.
  */
-int test_gen_fn(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builder, VALUE_LIST ** vl) {
+int gen_fn(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builder, VALUE_LIST ** vl) {
 
-  // No parameters, returns an integer
+  // sanity check
+  if (parse_tree->typ != PARSER_FN) quit(1, "Parse tree is not a function");
+
+  // gather declaration
+  PARSE_DECL * decl = (PARSE_DECL *) parse_tree->val;
+
+  //todo: params
   LLVMTypeRef param_types[] = {};
-  LLVMTypeRef ret_type = LLVMFunctionType(LLVMInt32Type(), param_types, 0, 0);
 
-  // Main function name
-  LLVMValueRef main = LLVMAddFunction(*mod, "main", ret_type);
-  // Entry point
-  LLVMBasicBlockRef entry = LLVMAppendBasicBlock(main, "entry");
+  // gather return info
+  LLVMTypeRef ret_type_def;
+  get_type_ref(&ret_type_def, decl->typ->tok);
+
+  // Generate function definition
+  LLVMTypeRef fn_type = LLVMFunctionType(ret_type_def, param_types, 0 , 0);
+  LLVMValueRef fn = LLVMAddFunction(*mod, decl->identifier->val, fn_type);
+  LLVMBasicBlockRef entry = LLVMAppendBasicBlock(fn, "entry");
   LLVMPositionBuilderAtEnd(*builder, entry);
-  
-  // Generates a single statement from the parse tree
-  gen_stmt((GRAMMAR_T*)parse_tree->val, mod, builder, &main, vl, 0);
-  
+
+  // Generate inside of function
+  gen_stmt(decl->val, mod, builder, &fn, vl, 0);
   return 0;
 }
-
 
 /*
  * Generates the final file.
@@ -231,8 +238,8 @@ int gen_code(char * input_name, char * output_name, GRAMMAR_T * parse_tree) {
   VALUE_LIST * vl = 0;
 
 
-  // TODO: do real function generation, for now test function
-  test_gen_fn(parse_tree, &mod, &builder, &vl);
+  
+  gen_fn(parse_tree, &mod, &builder, &vl);
   
 
   // Compile

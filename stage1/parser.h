@@ -13,6 +13,7 @@ enum parser_type {
   PARSER_BINARY_OP,
   PARSER_TOKEN,
   PARSER_LIST,
+  PARSER_FN,
   PARSER_UNKNOWN = -1,
 };
 
@@ -39,7 +40,8 @@ typedef struct {
   TOKEN * identifier;
   TOKEN * typ;
   GRAMMAR_T * val;
-} LET_DECL;
+} PARSE_DECL;
+
 
 /*
  * Case for unary operators
