@@ -345,16 +345,15 @@ void print_tree(GRAMMAR_T * out) {
   }
 }
 
+
 /*
  * This is the main parser
  */
 int parser(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out) {
   // since we aren't ready for a full implementation, we are just parsing a statement.
-  out->typ = PARSER_STMT;
   int idx = 0;
-  GRAMMAR_T * val = malloc(sizeof(GRAMMAR_T));
-  out->val = (void*) val;
-  int tmp = parse_stmt(tokens, alloc_tokens, val, idx);
+  out->typ = PARSER_UNKNOWN;
+  int tmp = parse_fn(tokens, alloc_tokens, out, idx);
   if (tmp < 0) {
     return tmp;
   }
