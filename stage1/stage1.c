@@ -68,7 +68,7 @@ int main(int argc, char ** argv) {
   // run the parser
   int parsed = parser(&tokens_main, alloc_tokens_main, parse_tree_main);
   if (parsed < 0) {
-    printf("unable to parse information properly\n");
+    quit(1, "unable to parse information properly\n");
   }
   
   // Print the parse tree
