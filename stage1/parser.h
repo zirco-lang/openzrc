@@ -39,7 +39,8 @@ typedef struct {
   TOKEN * identifier;
   TOKEN * typ;
   GRAMMAR_T * val;
-} LET_DECL;
+} PARSE_DECL;
+
 
 /*
  * Case for unary operators

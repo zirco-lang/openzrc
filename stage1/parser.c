@@ -61,7 +61,7 @@ int parse_expr(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
 /*
   Parse a `let` declaration
  */
-int parse_let_decl(TOKEN ** tokens, int alloc_tokens, LET_DECL * out, int idx) {
+int parse_let_decl(TOKEN ** tokens, int alloc_tokens, PARSE_DECL * out, int idx) {
 
   // child value is unknown until needed
   GRAMMAR_T * val = malloc(sizeof(GRAMMAR_T));
@@ -123,7 +123,7 @@ int parse_stmt(TOKEN ** tokens, int alloc_tokens, GRAMMAR_T * out, int idx) {
   // check for a let identifier
   if (current.tok == TOK_LET) {
     out->typ = PARSER_LET_DECL;
-    LET_DECL * val = malloc(sizeof(LET_DECL));
+    PARSE_DECL * val = malloc(sizeof(PARSE_DECL));
     out->val = (void *) val;
     return parse_let_decl(tokens, alloc_tokens, val, idx) + 1;
   }
@@ -186,10 +186,10 @@ int free_parser(GRAMMAR_T * out) {
       if (out->val != 0) free_parser((GRAMMAR_T*)(out->val));
     }
     break;
-    // let decls have their own objects
+    // decls have their own objects
   case PARSER_LET_DECL:
     {
-      LET_DECL * decl = (LET_DECL*)(out->val);
+      PARSE_DECL * decl = (PARSE_DECL*)(out->val);
       free_parser((GRAMMAR_T*)(decl->val));
       free(decl);
     }
@@ -233,7 +233,7 @@ void print_tree(GRAMMAR_T * out) {
   case PARSER_LET_DECL:
     {
       printf("Begin Let Decl:\n");
-      LET_DECL * val = (LET_DECL*)(out->val);
+      PARSE_DECL * val = (PARSE_DECL*)(out->val);
       printf("  identifier: %s\n", val->identifier->val);
       printf("  typ: %s\n", val->typ->val);
       print_tree(val->val);

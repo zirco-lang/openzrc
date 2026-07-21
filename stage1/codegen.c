@@ -153,7 +153,7 @@ int gen_stmt(GRAMMAR_T * parse_tree, LLVMModuleRef* mod, LLVMBuilderRef * builde
   switch (parse_tree->typ) {
   case PARSER_LET_DECL:
     {
-      LET_DECL * decl = (LET_DECL*)parse_tree->val;
+      PARSE_DECL * decl = (PARSE_DECL*)parse_tree->val;
       char * name = decl->identifier->val;
       int typ = decl->typ->tok;
       LLVMTypeRef var_typ;
